@@ -32,22 +32,30 @@ jobs:
           Move-Item -Path "skia/third_party/externals/libjpeg-turbo-2.1.91" -Destination "skia/third_party/externals/libjpeg-turbo"
           Remove-Item libjpeg-turbo-main.zip
 
-      - name: Download Skia (Manual)
-        run: |
-          Invoke-WebRequest -Uri "https://github.com/aseprite/skia/releases/download/m102-861e474/skia-m102-861e474.zip" -OutFile "skia-m102-861e474.zip"
-          7z x skia-m102-861e474.zip -o"skia"
-          Remove-Item skia-m102-861e474.zip
+      - name: Checkout Skia
+        uses: actions/checkout@v4
+        with:
+          repository: aseprite/skia
+          ref: m102-861e4743af
+          path: skia
 
       - name: Setup MSVC Developer Command Prompt
         uses: TheMrMilchmann/setup-msvc-dev@v3
         with:
           arch: x64
 
+      - name: Build Skia
+        run: |
+          cd skia
+          python tools/git-sync-deps
+          python gn/gn.py gen out/Release-x64 "--args=is_official_build=true skia_use_system_libjpeg_turbo=false skia_use_system_libpng=false skia_use_system_libwebp=false skia_use_system_zlib=false"
+          ninja -C out/Release-x64
+
       - name: Build Aseprite
         run: |
           mkdir build
           cd build
-          cmake "../aseprite" -G Ninja -DCMAKE_BUILD_TYPE=MinSizeRel -DLAF_BACKEND=skia -DSKIA_DIR="../skia" -DSKIA_LIBRARY_DIR="../skia/out/Release-x64" -DSKIA_LIBRARY="../skia/out/Release-x64/skia.lib"
+          cmake "../aseprite" -G Ninja -DCMAKE_BUILD_TYPE=MinSizeRel -DLAF_BACKEND=skia -DSKIA_DIR="../../skia" -DSKIA_LIBRARY_DIR="../../skia/out/Release-x64" -DSKIA_LIBRARY="../../skia/out/Release-x64/skia.lib"
           ninja aseprite
           copy "C:/Windows/System32/libcrypto-1_1-x64.dll" ./bin
 
