@@ -47,9 +47,15 @@ jobs:
 
       - name: Clear vcpkg cache
         run: |
-          Remove-Item -Recurse -Force "$env:VCPKG_ROOT\downloads"
-          Remove-Item -Recurse -Force "$env:VCPKG_ROOT\buildtrees"
-          Remove-Item -Recurse -Force "$env:VCPKG_ROOT\packages"
+          if (Test-Path -Path "$env:VCPKG_ROOT\downloads") {
+            Remove-Item -Recurse -Force "$env:VCPKG_ROOT\downloads"
+          }
+          if (Test-Path -Path "$env:VCPKG_ROOT\buildtrees") {
+            Remove-Item -Recurse -Force "$env:VCPKG_ROOT\buildtrees"
+          }
+          if (Test-Path -Path "$env:VCPKG_ROOT\packages") {
+            Remove-Item -Recurse -Force "$env:VCPKG_ROOT\packages"
+          }
 
       - name: Install dependencies using vcpkg
         run: |
