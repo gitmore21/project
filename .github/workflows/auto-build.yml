@@ -74,8 +74,22 @@ jobs:
       - name: Build Skia
         run: |
           cd skia
+          echo "Executando git-sync-deps"
           python tools/git-sync-deps
+          echo "Saída do git-sync-deps:"
+          dir /s
+
+          echo "Verificando se a pasta gn existe:"
+          if (Test-Path -Path "gn") {
+            echo "Pasta gn encontrada."
+          } else {
+            echo "Pasta gn não encontrada. Clonando manualmente..."
+            git clone https://gn.googlesource.com/gn
+          }
+
+          echo "Executando gn gen"
           python gn/gn.py gen out/Release-x64 "--args=is_official_build=true skia_use_system_libjpeg_turbo=false skia_use_system_libpng=false skia_use_system_libwebp=false skia_use_system_zlib=false"
+          echo "Executando ninja"
           ninja -C out/Release-x64
 
       - name: Build Aseprite
