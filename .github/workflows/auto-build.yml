@@ -77,8 +77,8 @@ jobs:
           echo "Executando git-sync-deps"
           python tools/git-sync-deps
           echo "Saída do git-sync-deps:"
-          dir /s
-
+          Get-ChildItem -Recurse
+          
           echo "Verificando se a pasta gn existe:"
           if (Test-Path -Path "gn") {
             echo "Pasta gn encontrada."
