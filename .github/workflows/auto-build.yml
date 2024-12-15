@@ -25,9 +25,18 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Download Aseprite
+      - name: Download libjpeg-turbo (Manual)
         run: |
-          python download.py
+          Invoke-WebRequest -Uri "https://github.com/libjpeg-turbo/libjpeg-turbo/archive/refs/tags/2.1.91.zip" -OutFile "libjpeg-turbo-main.zip"
+          7z x libjpeg-turbo-main.zip -o"skia/third_party/externals"
+          Move-Item -Path "skia/third_party/externals/libjpeg-turbo-2.1.91" -Destination "skia/third_party/externals/libjpeg-turbo"
+          Remove-Item libjpeg-turbo-main.zip
+
+      - name: Download Skia (Manual)
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/aseprite/skia/releases/download/m102-861e474/skia-m102-861e474.zip" -OutFile "skia-m102-861e474.zip"
+          7z x skia-m102-861e474.zip -o"skia"
+          Remove-Item skia-m102-861e474.zip
 
       - name: Setup MSVC Developer Command Prompt
         uses: TheMrMilchmann/setup-msvc-dev@v3
@@ -38,7 +47,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake "../src/aseprite" -G Ninja -DCMAKE_BUILD_TYPE=MinSizeRel -DLAF_BACKEND=skia -DSKIA_DIR="../src/skia" -DSKIA_LIBRARY_DIR="../src/skia/out/Release-x64" -DSKIA_LIBRARY="../src/skia/out/Release-x64/skia.lib"
+          cmake "../aseprite" -G Ninja -DCMAKE_BUILD_TYPE=MinSizeRel -DLAF_BACKEND=skia -DSKIA_DIR="../skia" -DSKIA_LIBRARY_DIR="../skia/out/Release-x64" -DSKIA_LIBRARY="../skia/out/Release-x64/skia.lib"
           ninja aseprite
           copy "C:/Windows/System32/libcrypto-1_1-x64.dll" ./bin
 
