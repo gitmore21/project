@@ -1,89 +1,66 @@
-name: Build TFS 1.4
+name: Build ForgottenServer
 
 on:
   push:
-    branches:
-      - main
-  workflow_dispatch:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    - uses: actions/checkout@v2
 
-      - name: Install Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-          
-      - name: Update pip # Added step to update pip
-        run: python -m pip install --upgrade pip
+    - name: Install curl
+      run: choco install curl -y
 
-      - name: Install gdown
-        run: pip install gdown
+    - name: Download Server Files
+      run: |
+        curl -L "https://drive.google.com/uc?export=download&id=1mbP66SZCS0jK7DKeQKb3PcvdgtmDdDNq" -o Server.zip
+        7z x Server.zip
 
-      - name: Download Server.zip (using Python)
-        run: python download.py
-        env:
-          GOOGLE_DRIVE_FILE_ID: "1mbP66SZCS0jK7DKeQKb3PcvdgtmDdDNq"
+    - name: Install vcpkg
+      run: |
+        git clone https://github.com/Microsoft/vcpkg.git
+        .\vcpkg\bootstrap-vcpkg.bat
+        .\vcpkg\vcpkg integrate install
 
-      - name: Check if Server.zip exists
-        id: check_files
-        uses: andstor/file-existence-action@v2
-        with:
-          files: "Server.zip"
+    - name: Install dependencies
+      run: |
+        .\vcpkg\vcpkg install boost-asio:x64-windows
+        .\vcpkg\vcpkg install boost-filesystem:x64-windows
+        .\vcpkg\vcpkg install boost-iostreams:x64-windows
+        .\vcpkg\vcpkg install boost-lockfree:x64-windows
+        .\vcpkg\vcpkg install boost-system:x64-windows
+        .\vcpkg\vcpkg install boost-variant:x64-windows
+        .\vcpkg\vcpkg install cryptopp:x64-windows
+        .\vcpkg\vcpkg install luajit:x64-windows
+        .\vcpkg\vcpkg install mpir:x64-windows
+        .\vcpkg\vcpkg install pugixml:x64-windows
+        .\vcpkg\vcpkg install mysql-connector-cpp:x64-windows
 
-      - name: Fail if download failed
-        if: ${{ steps.check_files.outputs.files_exists == 'false' }}
-        run: exit 1
+    - name: Configure CMake
+      run: |
+        cd Server
+        mkdir build
+        cd build
+        cmake -DCMAKE_TOOLCHAIN_FILE=../../vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -G "Visual Studio 17 2022" -A x64 ..
 
-      - name: Create build directory
-        run: mkdir build
+    - name: Build
+      run: |
+        cd Server/build
+        cmake --build . --config Release
 
-      - name: Extract Server.zip
-        run: tar -xf Server.zip -C build
+    - name: Create artifacts
+      run: |
+        mkdir artifact
+        copy Server\build\Release\theforgottenserver.exe artifact\
+        copy Server\build\Release\*.dll artifact\
 
-      - name: Verify directory structure
-        shell: pwsh
-        run: |
-          if (!(Test-Path -Path ".\build\Server")) {
-            Write-Error "Directory 'build\Server' not found."
-            exit 1
-          }
-          if (!(Test-Path -Path ".\build\Server\CMakeLists.txt")) {
-            Write-Error "File 'build\Server\CMakeLists.txt' not found."
-            exit 1
-          }
-          if (!(Test-Path -Path ".\build\Server\src")) {
-            Write-Error "Directory 'build\Server\src' not found."
-            exit 1
-          }
-          if (!(Test-Path -Path ".\build\Server\src\CMakeLists.txt")) {
-            Write-Error "File 'build\Server\src\CMakeLists.txt' not found."
-            exit 1
-          }
-          Write-Host "Directory structure is valid."
-
-      - name: Setup vcpkg
-        uses: lukka/run-vcpkg@v11
-
-      - name: Install dependencies using vcpkg
-        run: |
-          cd build
-          .\vcpkg\vcpkg install boost-iostreams:x64-windows boost-asio:x64-windows boost-system:x64-windows boost-filesystem:x64-windows boost-variant:x64-windows boost-uuid:x64-windows boost-thread:x64-windows luajit:x64-windows libmariadb:x64-windows pugixml:x64-windows cryptopp:x64-windows fmt:x64-windows
-
-      - name: Setup MSVC Developer Command Prompt
-        uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: x64
-
-      - name: Configure CMake
-        run: |
-          cd build
-          cmake ..\Server -A x64 -DCMAKE_TOOLCHAIN_FILE=.\vcpkg\scripts\buildsystems\vcpkg.cmake
-
-      - name: Build
-        run: cmake --build . --config Release
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: tfs-windows
+        path: artifact\
