@@ -27,23 +27,23 @@ jobs:
     - name: Install gdown
       run: pip install gdown
 
-    - name: Download Server_Windows.rar from Google Drive
+    - name: Download Server_Windows.zip from Google Drive
       run: |
-        gdown --fuzzy 1S2xdO4gPTNfsWdqevPkiTd_ufmWVKk3L -O Server_Windows.rar
+        gdown --fuzzy 14Lkj7ihYDFIEd65BjxD_4hHc_kDgLHo0 -O Server_Windows.zip
 
-    - name: Check if Server_Windows.rar exists
+    - name: Check if Server_Windows.zip exists
       id: check_files
       uses: andstor/file-existence-action@v2
       with:
-        files: "Server_Windows.rar"
+        files: "Server_Windows.zip"
 
     - name: Fail if download failed
       if: ${{ steps.check_files.outputs.files_exists == 'false' }}
       run: exit 1
 
-    - name: Extract Server_Windows.rar
+    - name: Extract Server_Windows.zip
       run: |
-        Expand-Archive -Path Server_Windows.rar -DestinationPath .\server
+        Expand-Archive -Path Server_Windows.zip -DestinationPath .\server
 
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1.1
