@@ -1,4 +1,5 @@
 name: Forgotten Server 1.4 Windows Build
+
 on:
   push:
     branches: [ main ]
@@ -12,78 +13,63 @@ env:
 jobs:
   build:
     runs-on: windows-latest
-    
+
     steps:
     - uses: actions/checkout@v3
       with:
         submodules: recursive
-    
+
     - name: Clone vcpkg
       run: git clone https://github.com/Microsoft/vcpkg.git
-    
+
     - name: Bootstrap vcpkg
       run: |
         cd vcpkg
         .\bootstrap-vcpkg.bat
-    
-    - name: Create vcpkg.json
+
+    - name: Setup Python for Google Drive Download
+      uses: actions/setup-python@v3 # Correção: setup-python@v4 -> setup-python@v3
+      with:
+        python-version: '3.x'
+
+    - name: Update pip # Importante para evitar erros com versões antigas do pip
+      run: python -m pip install --upgrade pip
+
+    - name: Install gdown for Google Drive Download
+      run: pip install gdown
+
+    - name: Download Server.zip from Google Drive
       run: |
-        echo '{
-            "name": "forgotten-server",
-            "version": "1.4.0",
-            "dependencies": [
-                "boost",
-                "openssl",
-                "mysql-connector-cpp",
-                "asio",
-                "cryptopp",
-                "pugixml",
-                "fmt",
-                "luajit",
-                "lua",
-                "threads"
-            ],
-            "builtin-baseline": "4c1a773f4704a8a16e89def5e0ade9dd25bdd3c1"
-        }' > ${{ github.workspace }}/vcpkg/vcpkg.json
-    
+        gdown --fuzzy 1mbP66SZCS0jK7DKeQKb3PcvdgtmDdDNq -O Server.zip # Correção: Adicionado --fuzzy e -O Server.zip
+
+    - name: Check if Server.zip exists # Verifica se o download funcionou
+      id: check_files
+      uses: andstor/file-existence-action@v2
+      with:
+        files: "Server.zip"
+
+    - name: Fail if download failed # Interrompe o workflow se o download falhar
+      if: ${{ steps.check_files.outputs.files_exists == 'false' }}
+      run: exit 1
+
+    - name: Extract Server.zip
+      run: |
+        Expand-Archive -Path Server.zip -DestinationPath .\server # Correção: DestinationPath .\server
+
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v1.1
+
     - name: Setup vcpkg
       uses: lukka/run-vcpkg@v11
       with:
         vcpkgDirectory: '${{ github.workspace }}/vcpkg'
-        vcpkgGitCommitId: '4c1a773f4704a8a16e89def5e0ade9dd25bdd3c1'
-    
-    - name: Setup Python for Google Drive Download
-      uses: actions/setup-python@v3
-      with:
-        python-version: '3.x'
-    
-    - name: Install gdown for Google Drive Download
-      run: pip install gdown
-    
-    - name: Download Server.zip from Google Drive
-      run: |
-        gdown 1mbP66SZCS0jK7DKeQKb3PcvdgtmDdDNq
-    
-    - name: Extract Server.zip
-      run: |
-        Expand-Archive -Path Server.zip -DestinationPath ./server
-    
-    - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v1.1
-    
+        # Remova a linha abaixo:
+        # vcpkgGitCommitId: '4c1a773f4704a8a16e89def5e0ade9dd25bdd3c1'
+
     - name: Install Dependencies via vcpkg
       run: |
-        ${{ github.workspace }}/vcpkg/vcpkg install boost:x64-windows
-        ${{ github.workspace }}/vcpkg/vcpkg install openssl:x64-windows
-        ${{ github.workspace }}/vcpkg/vcpkg install mysql-connector-cpp:x64-windows
-        ${{ github.workspace }}/vcpkg/vcpkg install asio:x64-windows
-        ${{ github.workspace }}/vcpkg/vcpkg install cryptopp:x64-windows
-        ${{ github.workspace }}/vcpkg/vcpkg install pugixml:x64-windows
-        ${{ github.workspace }}/vcpkg/vcpkg install fmt:x64-windows
-        ${{ github.workspace }}/vcpkg/vcpkg install luajit:x64-windows
-        ${{ github.workspace }}/vcpkg/vcpkg install lua:x64-windows
-        ${{ github.workspace }}/vcpkg/vcpkg install threads:x64-windows
-    
+        ${{ github.workspace }}/vcpkg/vcpkg install boost-iostreams:x64-windows boost-asio:x64-windows boost-system:x64-windows boost-filesystem:x64-windows boost-variant:x64-windows boost-uuid:x64-windows boost-thread:x64-windows luajit:x64-windows libmariadb:x64-windows pugixml:x64-windows cryptopp:x64-windows fmt:x64-windows
+
     - name: Configure CMake
       run: |
         cd server
@@ -92,12 +78,12 @@ jobs:
         -DVCPKG_TARGET_TRIPLET=x64-windows \
         -DCMAKE_BUILD_TYPE=Release \
         -DUSE_LUAJIT=ON
-    
+
     - name: Build Project
       run: |
         cd server
         cmake --build build --config Release
-    
+
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v3
       with:
