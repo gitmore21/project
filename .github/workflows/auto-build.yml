@@ -1,43 +1,29 @@
-name: Auto build Aseprite
+name: Build TFS
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main"] # Ajuste para a branch principal do seu projeto, ex: master
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  auto-build:
-    name: Auto build Aseprite for Windows x64
-    runs-on: windows-2022
+  build-tfs:
+    name: Build TFS (Windows x64)
+    runs-on: windows-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install CMake
+        run: choco install cmake -y
 
       - name: Install Ninja
-        run: |
-          choco install ninja -y
-
-      - name: Install Python requirements
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: Download libjpeg-turbo (Manual)
-        run: |
-          Invoke-WebRequest -Uri "https://github.com/libjpeg-turbo/libjpeg-turbo/archive/refs/tags/2.1.91.zip" -OutFile "libjpeg-turbo-main.zip"
-          7z x libjpeg-turbo-main.zip -o"skia/third_party/externals"
-          Move-Item -Path "skia/third_party/externals/libjpeg-turbo-2.1.91" -Destination "skia/third_party/externals/libjpeg-turbo"
-          Remove-Item libjpeg-turbo-main.zip
-
-      - name: Checkout Skia
-        uses: actions/checkout@v4
-        with:
-          repository: aseprite/skia
-          ref: m102-861e4743af
-          path: skia
+        run: choco install ninja -y
 
       - name: Install vcpkg
         run: git clone https://github.com/microsoft/vcpkg.git && .\vcpkg\bootstrap-vcpkg.bat
@@ -45,25 +31,17 @@ jobs:
       - name: Set VCPKG_ROOT
         run: echo "VCPKG_ROOT=$PWD/vcpkg" >> $env:GITHUB_ENV
 
-      - name: Clear vcpkg cache
-        run: |
-          if (Test-Path -Path "$env:VCPKG_ROOT\downloads") {
-            Remove-Item -Recurse -Force "$env:VCPKG_ROOT\downloads"
-          }
-          if (Test-Path -Path "$env:VCPKG_ROOT\buildtrees") {
-            Remove-Item -Recurse -Force "$env:VCPKG_ROOT\buildtrees"
-          }
-          if (Test-Path -Path "$env:VCPKG_ROOT\packages") {
-            Remove-Item -Recurse -Force "$env:VCPKG_ROOT\packages"
-          }
-
       - name: Install dependencies using vcpkg
         run: |
           .\vcpkg\vcpkg install boost:x64-windows-static
-          .\vcpkg\vcpkg install luajit:x64-windows-static
-          .\vcpkg\vcpkg install openssl:x64-windows-static
           .\vcpkg\vcpkg install libmariadb:x64-windows-static
-          .\vcpkg\vcpkg install gmp:x64-windows-static
+          .\vcpkg\vcpkg install libmysql:x64-windows-static
+          .\vcpkg\vcpkg install lua:x64-windows-static
+          .\vcpkg\vcpkg install libxml2:x64-windows-static
+          .\vcpkg\vcpkg install zlib:x64-windows-static
+          .\vcpkg\vcpkg install openssl:x64-windows-static
+          .\vcpkg\vcpkg install cryptopp:x64-windows-static
+          .\vcpkg\vcpkg install gmp:x64-windows-static          
           .\vcpkg\vcpkg integrate install
 
       - name: Setup MSVC Developer Command Prompt
@@ -71,50 +49,41 @@ jobs:
         with:
           arch: x64
 
-      - name: Build Skia
+      - name: Create Build Directory
+        run: mkdir build
+
+      - name: Configure CMake
+        working-directory: ./build
         run: |
-          cd skia
-          echo "Executando git-sync-deps"
-          python tools/git-sync-deps
-          echo "Saída do git-sync-deps:"
-          Get-ChildItem -Recurse
-          
-          echo "Verificando se a pasta gn existe:"
-          if (Test-Path -Path "gn") {
-            echo "Pasta gn encontrada."
-          } else {
-            echo "Pasta gn não encontrada. Clonando manualmente..."
-            git clone https://gn.googlesource.com/gn
-          }
+          cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows-static -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
 
-          echo "Executando gn gen"
-          python gn/gn.py gen out/Release-x64 "--args=is_official_build=true skia_use_system_libjpeg_turbo=false skia_use_system_libpng=false skia_use_system_libwebp=false skia_use_system_zlib=false"
-          echo "Executando ninja"
-          ninja -C out/Release-x64
+      - name: Build TFS
+        working-directory: ./build
+        run: ninja
 
-      - name: Build Aseprite
+      - name: Rename Executable
+        working-directory: ./build
         run: |
-          mkdir build
-          cd build
-          cmake "../aseprite" -G Ninja -DCMAKE_BUILD_TYPE=MinSizeRel -DLAF_BACKEND=skia -DSKIA_DIR="../../skia" -DSKIA_LIBRARY_DIR="../../skia/out/Release-x64" -DSKIA_LIBRARY="../../skia/out/Release-x64/skia.lib"
-          ninja aseprite
-          copy "C:/Windows/System32/libcrypto-1_1-x64.dll" ./bin
+          Rename-Item forgottenserver.exe tfs.exe
 
-      - name: Get version
-        id: get_version
+      - name: Create Artifacts Directory
+        run: mkdir artifacts
+
+      - name: Copy Executable and Dependencies
         run: |
-          $version = Get-Content version.txt
-          echo "version=$version" >> $env:GITHUB_OUTPUT
+          Copy-Item build/tfs.exe artifacts/
+          # Adicione aqui quaisquer DLLs que foram compiladas com o projeto e são necessárias na execução
+          # Exemplo: Copy-Item build/my_custom_dll.dll artifacts/ 
 
-      - name: Zip Aseprite
+      - name: Zip Artifacts
         run: |
-          cd build/bin
-          7z a ../../Aseprite-Windows-x64-${{ steps.get_version.outputs.version }}.zip *
+          Compress-Archive -Path artifacts/* -DestinationPath tfs-windows-x64.zip
 
-      - name: GH Release
+      - name: Create Release
         uses: softprops/action-gh-release@v2.0.4
+        if: startsWith(github.ref, 'refs/tags/')
         with:
-          name: Aseprite-Windows-x64-${{ steps.get_version.outputs.version }}
-          tag_name: ${{ steps.get_version.outputs.version }}
+          name: TFS Release ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
           files: |
-            Aseprite-Windows-x64-${{ steps.get_version.outputs.version }}.zip
+            tfs-windows-x64.zip
