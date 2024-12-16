@@ -64,8 +64,8 @@ jobs:
 
     - name: Configure CMake
       run: |
-        cd server
-        cmake -B build \
+        cd ${{ github.workspace }}
+        cmake -B build -S server \
         -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake \
         -DVCPKG_TARGET_TRIPLET=x64-windows \
         -DCMAKE_BUILD_TYPE=Release \
@@ -73,11 +73,11 @@ jobs:
 
     - name: Build Project
       run: |
-        cd server
-        cmake --build build --config Release
+        cd ${{ github.workspace }}/build
+        cmake --build . --config Release
 
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v3
       with:
         name: tfs-windows-build
-        path: server/build/Release/tfs.exe
+        path: ${{ github.workspace }}/build/Release/tfs.exe
