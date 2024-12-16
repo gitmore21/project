@@ -14,25 +14,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install Python (for download script)
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
-      - name: Install gdown (for download script)
-        run: pip install gdown
-
-      - name: Download Server.zip (using Python)
-        run: python download.py
-        env:
-          GOOGLE_DRIVE_FILE_ID: "1mbP66SZCS0jK7DKeQKb3PcvdgtmDdDNq" # Coloque o ID do seu arquivo aqui
+      - name: Download Server.zip
+        run: |
+          wget "https://drive.google.com/uc?export=download&id=1mbP66SZCS0jK7DKeQKb3PcvdgtmDdDNq" -O Server.zip
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Download failed with exit code $LASTEXITCODE"
+            exit 1
+          }
 
       - name: Check if Server.zip exists
         id: check_files
         uses: andstor/file-existence-action@v2
         with:
           files: "Server.zip"
-      
+
       - name: Fail if download failed
         if: ${{ steps.check_files.outputs.files_exists == 'false' }}
         run: exit 1
