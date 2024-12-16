@@ -1,4 +1,4 @@
-velimport gdown
+import gdown
 import os
 
 def download_from_google_drive(file_id, output_path):
@@ -15,7 +15,7 @@ def download_from_google_drive(file_id, output_path):
     print(f"Error downloading file: {e}")
 
 if __name__ == "__main__":
-  file_id = "1mbP66SZCS0jK7DKeQKb3PcvdgtmDdDNq"  # Substitua pelo ID do arquivo no Google Drive
+  file_id = os.getenv("1mbP66SZCS0jK7DKeQKb3PcvdgtmDdDNq")
   output_filename = "Server.zip"
   output_directory = "."
 
