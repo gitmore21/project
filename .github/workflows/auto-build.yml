@@ -7,12 +7,17 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+env:
+  VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+
 jobs:
   build:
     runs-on: windows-latest
     
     steps:
     - uses: actions/checkout@v3
+      with:
+        submodules: recursive
     
     - name: Setup Python for Google Drive Download
       uses: actions/setup-python@v3
@@ -34,23 +39,31 @@ jobs:
       uses: microsoft/setup-msbuild@v1.1
     
     - name: Setup vcpkg
-      uses: friendlyanon/setup-vcpkg@v1
+      uses: lukka/run-vcpkg@v11
       with:
-        vcpkg-triplet: x64-windows
-        vcpkg-cache-key: '${{ runner.os }}-vcpkg'
+        vcpkgDirectory: '${{ github.workspace }}/vcpkg'
     
     - name: Install Dependencies via vcpkg
       run: |
-        vcpkg install boost:x64-windows
-        vcpkg install openssl:x64-windows
-        vcpkg install mysql-connector-cpp:x64-windows
-        vcpkg install asio:x64-windows
-        vcpkg integrate install
+        ${{ github.workspace }}/vcpkg/vcpkg install boost:x64-windows
+        ${{ github.workspace }}/vcpkg/vcpkg install openssl:x64-windows
+        ${{ github.workspace }}/vcpkg/vcpkg install mysql-connector-cpp:x64-windows
+        ${{ github.workspace }}/vcpkg/vcpkg install asio:x64-windows
+        ${{ github.workspace }}/vcpkg/vcpkg install cryptopp:x64-windows
+        ${{ github.workspace }}/vcpkg/vcpkg install pugixml:x64-windows
+        ${{ github.workspace }}/vcpkg/vcpkg install fmt:x64-windows
+        ${{ github.workspace }}/vcpkg/vcpkg install luajit:x64-windows
+        ${{ github.workspace }}/vcpkg/vcpkg install lua:x64-windows
+        ${{ github.workspace }}/vcpkg/vcpkg install threads:x64-windows
     
     - name: Configure CMake
       run: |
         cd server
-        cmake -B build -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows
+        cmake -B build \
+        -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake \
+        -DVCPKG_TARGET_TRIPLET=x64-windows \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DUSE_LUAJIT=ON
     
     - name: Build Project
       run: |
