@@ -1,66 +1,64 @@
-name: Build ForgottenServer
+name: Forgotten Server 1.4 Windows Build
 
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: windows-latest
-
+    
     steps:
-    - uses: actions/checkout@v4
-
-    - name: Install curl
-      run: choco install curl -y
-
-    - name: Download Server Files
+    - uses: actions/checkout@v3
+    
+    - name: Setup Python for Google Drive Download
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.x'
+    
+    - name: Install gdown for Google Drive Download
+      run: pip install gdown
+    
+    - name: Download Server.zip from Google Drive
       run: |
-        curl -L "https://drive.google.com/uc?export=download&id=1mbP66SZCS0jK7DKeQKb3PcvdgtmDdDNq" -o Server.zip
-        7z x Server.zip
-
-    - name: Install vcpkg
+        gdown 1mbP66SZCS0jK7DKeQKb3PcvdgtmDdDNq
+    
+    - name: Extract Server.zip
       run: |
-        git clone https://github.com/Microsoft/vcpkg.git
-        .\vcpkg\bootstrap-vcpkg.bat
-        .\vcpkg\vcpkg integrate install
-
-    - name: Install dependencies
+        Expand-Archive -Path Server.zip -DestinationPath ./server
+    
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v1.1
+    
+    - name: Setup vcpkg
+      uses: friendlyanon/setup-vcpkg@v1
+      with:
+        vcpkg-triplet: x64-windows
+        vcpkg-cache-key: '${{ runner.os }}-vcpkg'
+    
+    - name: Install Dependencies via vcpkg
       run: |
-        .\vcpkg\vcpkg install boost-asio:x64-windows
-        .\vcpkg\vcpkg install boost-filesystem:x64-windows
-        .\vcpkg\vcpkg install boost-iostreams:x64-windows
-        .\vcpkg\vcpkg install boost-lockfree:x64-windows
-        .\vcpkg\vcpkg install boost-system:x64-windows
-        .\vcpkg\vcpkg install boost-variant:x64-windows
-        .\vcpkg\vcpkg install cryptopp:x64-windows
-        .\vcpkg\vcpkg install luajit:x64-windows
-        .\vcpkg\vcpkg install mpir:x64-windows
-        .\vcpkg\vcpkg install pugixml:x64-windows
-        .\vcpkg\vcpkg install mysql-connector-cpp:x64-windows
-
+        vcpkg install boost:x64-windows
+        vcpkg install openssl:x64-windows
+        vcpkg install mysql-connector-cpp:x64-windows
+        vcpkg install asio:x64-windows
+        vcpkg integrate install
+    
     - name: Configure CMake
       run: |
-        cd Server
-        mkdir build
-        cd build
-        cmake -DCMAKE_TOOLCHAIN_FILE=../../vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -G "Visual Studio 17 2022" -A x64 ..
-
-    - name: Build
+        cd server
+        cmake -B build -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows
+    
+    - name: Build Project
       run: |
-        cd Server/build
-        cmake --build . --config Release
-
-    - name: Create artifacts
-      run: |
-        mkdir artifact
-        copy Server\build\Release\theforgottenserver.exe artifact\
-        copy Server\build\Release\*.dll artifact\
-
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v4
+        cd server
+        cmake --build build --config Release
+    
+    - name: Upload Build Artifact
+      uses: actions/upload-artifact@v3
       with:
-        name: tfs-windows
-        path: artifact\
+        name: tfs-windows-build
+        path: server/build/Release/tfs.exe
