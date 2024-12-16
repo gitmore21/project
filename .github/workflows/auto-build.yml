@@ -2,7 +2,7 @@ name: Build TFS
 
 on:
   push:
-    branches: ["main"] # Ajuste para a branch principal do seu projeto, ex: master
+    branches: ["master"] # Ajuste para a branch principal do seu projeto, ex: master
   workflow_dispatch:
 
 permissions:
@@ -17,7 +17,29 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          repository: otland/forgottenserver #altere para o repositorio correto
+          ref: master #altere para o branch correto, se necessario
           submodules: recursive
+
+      - name: Check for CMakeLists.txt
+        run: |
+          if (!(Test-Path -Path "CMakeLists.txt")) {
+            Write-Error "CMakeLists.txt not found in the root directory!"
+            exit 1
+          }
+          if (!(Test-Path -Path "src/CMakeLists.txt")) {
+            Write-Error "CMakeLists.txt not found in the src directory!"
+            exit 1
+          }
+          echo "CMakeLists.txt found in both root and src directories."
+
+      - name: Check for src directory
+        run: |
+          if (!(Test-Path -Path "src")) {
+            Write-Error "src directory not found!"
+            exit 1
+          }
+          echo "src directory found."
 
       - name: Install CMake
         run: choco install cmake -y
@@ -41,7 +63,8 @@ jobs:
           .\vcpkg\vcpkg install zlib:x64-windows-static
           .\vcpkg\vcpkg install openssl:x64-windows-static
           .\vcpkg\vcpkg install cryptopp:x64-windows-static
-          .\vcpkg\vcpkg install gmp:x64-windows-static          
+          .\vcpkg\vcpkg install gmp:x64-windows-static
+          .\vcpkg\vcpkg install fmt:x64-windows-static
           .\vcpkg\vcpkg integrate install
 
       - name: Setup MSVC Developer Command Prompt
