@@ -13,11 +13,13 @@
     "libmariadb",
     "pugixml",
     "cryptopp",
-    "boost-lockfree",
+    "boost-lockfree"
+  ],
+  "builtin-baseline": "4d995c5159b3a474817c63e60947d6ae6d987d27",
+  "overrides": [
     {
       "name": "fmt",
-      "version>=": "9.1.0",
-      "version<": "9.2.0"
+      "version": "9.1.0"
     }
   ]
 }
