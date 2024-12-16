@@ -65,7 +65,7 @@ jobs:
     - name: Configure CMake
       run: |
         cd ${{ github.workspace }}
-        cmake -B build -S server \
+        cmake -B build -S server/Server \
         -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake \
         -DVCPKG_TARGET_TRIPLET=x64-windows \
         -DCMAKE_BUILD_TYPE=Release \
