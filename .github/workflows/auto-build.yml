@@ -70,12 +70,13 @@ jobs:
         -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake `
         -DVCPKG_TARGET_TRIPLET=x64-windows `
         -DCMAKE_BUILD_TYPE=Release `
-        -DUSE_LUAJIT=ON
+        -DUSE_LUAJIT=ON `
+        -DCMAKE_VERBOSE_MAKEFILE=ON
 
     - name: Build Project
       run: |
         cd ${{ github.workspace }}/build
-        cmake --build . --config Release
+        cmake --build . --config Release --verbose
 
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v3
