@@ -11,7 +11,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     - name: Install curl
       run: choco install curl -y
@@ -60,7 +60,7 @@ jobs:
         copy Server\build\Release\*.dll artifact\
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: tfs-windows
         path: artifact\
