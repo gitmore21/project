@@ -1,4 +1,4 @@
-import gdown
+limport gdown
 import os
 
 def download_from_google_drive(file_id, output_path):
@@ -16,7 +16,7 @@ def download_from_google_drive(file_id, output_path):
 
 if __name__ == "__main__":
   file_id = "1mbP66SZCS0jK7DKeQKb3PcvdgtmDdDNq"  # Substitua pelo ID do arquivo no Google Drive
-  output_filename = "Server.zip"
+  output_filename = "hell.zip"
   output_directory = "."
 
   output_path = os.path.join(output_directory, output_filename)
