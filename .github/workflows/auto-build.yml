@@ -16,11 +16,16 @@ jobs:
 
       - name: Download Server.zip
         run: |
-          wget "https://drive.google.com/uc?export=download&id=1mbP66SZCS0jK7DKeQKb3PcvdgtmDdDNq" -O Server.zip
+          curl -L -O "https://drive.google.com/uc?export=download&id=1mbP66SZCS0jK7DKeQKb3PcvdgtmDdDNq"
           if ($LASTEXITCODE -ne 0) {
             Write-Error "Download failed with exit code $LASTEXITCODE"
             exit 1
           }
+        shell: pwsh
+
+      - name: Rename Downloaded File
+        run: Move-Item -Path "uc?export=download&id=1mbP66SZCS0jK7DKeQKb3PcvdgtmDdDNq" -Destination "Server.zip"
+        shell: pwsh
 
       - name: Check if Server.zip exists
         id: check_files
