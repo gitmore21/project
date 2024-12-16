@@ -59,8 +59,8 @@ jobs:
 
     - name: Install Dependencies via vcpkg
       run: |
-        cd ${{ github.workspace }}
-        ${{ github.workspace }}/vcpkg/vcpkg install boost-iostreams:x64-windows boost-asio:x64-windows boost-system:x64-windows boost-filesystem:x64-windows boost-variant:x64-windows boost-uuid:x64-windows boost-thread:x64-windows luajit:x64-windows libmariadb:x64-windows pugixml:x64-windows cryptopp:x64-windows fmt:x64-windows
+        cd ${{ github.workspace }}/vcpkg
+        ./vcpkg install boost-iostreams:x64-windows boost-asio:x64-windows boost-system:x64-windows boost-filesystem:x64-windows boost-variant:x64-windows boost-uuid:x64-windows boost-thread:x64-windows luajit:x64-windows libmariadb:x64-windows pugixml:x64-windows cryptopp:x64-windows fmt:x64-windows
 
     - name: Configure CMake
       run: |
