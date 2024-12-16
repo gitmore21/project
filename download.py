@@ -17,7 +17,7 @@ def download_from_google_drive(file_id, output_path):
     exit(1)  # Exit with an error code if download fails
 
 if __name__ == "__main__":
-  file_id = os.getenv("GOOGLE_DRIVE_FILE_ID")
+  file_id = os.getenv("1mbP66SZCS0jK7DKeQKb3PcvdgtmDdDNq")
   if not file_id:
     print("Error: GOOGLE_DRIVE_FILE_ID environment variable not set.")
     exit(1)
