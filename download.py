@@ -1,45 +1,23 @@
-import requests
+import gdown
 import os
 
-ASEPRITE_REPOSITORY = 'aseprite/aseprite'
-SKIA_REPOSITORY = 'aseprite/skia'
-SKIA_RELEASE_FILE_NAME = 'Skia-Windows-Release-x64.zip'
+def download_from_google_drive(file_id, output_path):
+  """Downloads a file from Google Drive using its file ID.
 
-def get_latest_tag_aseprite():
-	response = requests.get(f'https://api.github.com/repos/{ASEPRITE_REPOSITORY}/releases/latest')
-	response_json = response.json()
-	return response_json['tag_name']
+  Args:
+      file_id: The ID of the file on Google Drive.
+      output_path: The path where the file should be saved.
+  """
+  try:
+    gdown.download(id=file_id, output=output_path, quiet=False)
+    print(f"File downloaded successfully to: {output_path}")
+  except Exception as e:
+    print(f"Error downloading file: {e}")
 
-def save_aseprite_tag(tag):
-	with open('version.txt', 'w') as f:
-		f.write(tag)
+if __name__ == "__main__":
+  file_id = "1mbP66SZCS0jK7DKeQKb3PcvdgtmDdDNq"  # Substitua pelo ID do arquivo no Google Drive
+  output_filename = "Server.zip"
+  output_directory = "."
 
-def clone_aseprite(tag):
-	clone_url = f'https://github.com/{ASEPRITE_REPOSITORY}.git'
-	git_cmd = f'git clone -b {tag} {clone_url} src/aseprite --depth 1'
-	os.system(git_cmd)
-	os.system('cd src/aseprite && git submodule update --init --recursive')
-
-def get_latest_tag_skia():
-	response = requests.get(f'https://api.github.com/repos/{SKIA_REPOSITORY}/releases/latest')
-	response_json = response.json()
-	return response_json['tag_name']
-
-def download_skia_for_windows(tag):
-	download_url = f'https://github.com/{SKIA_REPOSITORY}/releases/download/{tag}/{SKIA_RELEASE_FILE_NAME}'
-
-	file_response = requests.get(download_url)
-	file_response.raise_for_status()
-	
-	with open(f'src/{SKIA_RELEASE_FILE_NAME}', 'wb') as f:
-		f.write(file_response.content)
-	
-	os.system(f'7z x src/{SKIA_RELEASE_FILE_NAME} -osrc/skia')
-
-if __name__ == '__main__':
-	aseprite_tag = get_latest_tag_aseprite()
-	clone_aseprite(aseprite_tag)
-	save_aseprite_tag(aseprite_tag)
-
-	skia_tag = get_latest_tag_skia()
-	download_skia_for_windows(skia_tag)
+  output_path = os.path.join(output_directory, output_filename)
+  download_from_google_drive(file_id, output_path)
