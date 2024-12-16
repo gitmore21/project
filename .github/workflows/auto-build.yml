@@ -18,6 +18,38 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: recursive
+
+    - name: Clone vcpkg
+      run: git clone https://github.com/Microsoft/vcpkg.git
+    
+    - name: Bootstrap vcpkg
+      run: |
+        cd vcpkg
+        .\bootstrap-vcpkg.bat
+    
+    - name: Setup vcpkg
+      uses: lukka/run-vcpkg@v11
+      with:
+        vcpkgDirectory: '${{ github.workspace }}/vcpkg'
+    
+    - name: Add vcpkg.json
+      run: |
+        echo '{
+            "name": "forgotten-server",
+            "version": "1.4.0",
+            "dependencies": [
+                "boost",
+                "openssl",
+                "mysql-connector-cpp",
+                "asio",
+                "cryptopp",
+                "pugixml",
+                "fmt",
+                "luajit",
+                "lua",
+                "threads"
+            ]
+        }' > ${{ github.workspace }}/vcpkg/vcpkg.json
     
     - name: Setup Python for Google Drive Download
       uses: actions/setup-python@v3
@@ -37,11 +69,6 @@ jobs:
     
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1.1
-    
-    - name: Setup vcpkg
-      uses: lukka/run-vcpkg@v11
-      with:
-        vcpkgDirectory: '${{ github.workspace }}/vcpkg'
     
     - name: Install Dependencies via vcpkg
       run: |
