@@ -1,0 +1,23 @@
+{
+  "name": "tfs-project",
+  "version-string": "1.4",
+  "dependencies": [
+    "boost-iostreams",
+    "boost-asio",
+    "boost-system",
+    "boost-filesystem",
+    "boost-variant",
+    "boost-uuid",
+    "boost-thread",
+    "luajit",
+    "libmariadb",
+    "pugixml",
+    "cryptopp",
+    "boost-lockfree",
+    {
+      "name": "fmt",
+      "version>=": "9.1.0",
+      "version<": "9.2.0"
+    }
+  ]
+}
