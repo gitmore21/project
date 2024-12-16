@@ -48,10 +48,11 @@ jobs:
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1.1
 
-    - name: Clone vcpkg
+    - name: Clone and Update vcpkg
       run: |
         git clone https://github.com/microsoft/vcpkg.git ${{ github.workspace }}/vcpkg
         cd ${{ github.workspace }}/vcpkg
+        git fetch --depth=10000 origin # Fetch a sufficient number of commits
         git checkout 67289378e95565d7f2494f455d5d62e26299935f # Use um commit mais recente, se necessário, para manter a compatibilidade com o baseline
         .\bootstrap-vcpkg.bat
 
