@@ -3,8 +3,8 @@ name: Build TFS 1.4
 on:
   push:
     branches:
-      - main # Ou o nome do seu branch principal
-  workflow_dispatch: # Permite executar o workflow manualmente
+      - main
+  workflow_dispatch:
 
 jobs:
   build:
@@ -14,20 +14,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install Python (if needed for download)
+      - name: Install Python (for download script)
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      - name: Install gdown (if needed for download)
+      - name: Install gdown (for download script)
         run: pip install gdown
 
       - name: Download Server.zip (using Python)
-        run: python download.py  # Executa o script Python se você optar por ele
-        # Caso o download direto funcione, comente a linha acima e descomente as duas abaixo
-        #run: wget "1mbP66SZCS0jK7DKeQKb3PcvdgtmDdDNq" -O Server.zip # Substitua pelo link direto
-        #if: ${{ !env.DOWNLOAD_SUCCESS }} # Verifica se o wget falhou
-        
+        run: python download.py
+        env:
+          GOOGLE_DRIVE_FILE_ID: "1mbP66SZCS0jK7DKeQKb3PcvdgtmDdDNq" # Coloque o ID do seu arquivo aqui
+
       - name: Check if Server.zip exists
         id: check_files
         uses: andstor/file-existence-action@v2
@@ -44,10 +43,29 @@ jobs:
       - name: Extract Server.zip
         run: tar -xf Server.zip -C build
 
+      - name: Verify directory structure
+        shell: pwsh
+        run: |
+          if (!(Test-Path -Path ".\build\Server")) {
+            Write-Error "Directory 'build\Server' not found."
+            exit 1
+          }
+          if (!(Test-Path -Path ".\build\Server\CMakeLists.txt")) {
+            Write-Error "File 'build\Server\CMakeLists.txt' not found."
+            exit 1
+          }
+          if (!(Test-Path -Path ".\build\Server\src")) {
+            Write-Error "Directory 'build\Server\src' not found."
+            exit 1
+          }
+          if (!(Test-Path -Path ".\build\Server\src\CMakeLists.txt")) {
+            Write-Error "File 'build\Server\src\CMakeLists.txt' not found."
+            exit 1
+          }
+          Write-Host "Directory structure is valid."
+
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@v11
-        with:
-          vcpkgGitCommitId: 'd89c7f09e5d54e9b77785d0b5b5d6d87b76f8d87'
 
       - name: Install dependencies using vcpkg
         run: |
@@ -62,7 +80,7 @@ jobs:
       - name: Configure CMake
         run: |
           cd build
-          cmake .. -A x64 -DCMAKE_TOOLCHAIN_FILE=.\vcpkg\scripts\buildsystems\vcpkg.cmake
+          cmake ..\Server -A x64 -DCMAKE_TOOLCHAIN_FILE=.\vcpkg\scripts\buildsystems\vcpkg.cmake
 
       - name: Build
         run: cmake --build . --config Release
