@@ -1,4 +1,4 @@
-name: Forgotten Server 1.4 Windows Build
+name: Build TFS 1.4
 
 on:
   push:
@@ -6,9 +6,6 @@ on:
   pull_request:
     branches: [ main ]
   workflow_dispatch:
-
-env:
-  VCPKG_ROOT: ${{ github.workspace }}/vcpkg
 
 jobs:
   build:
@@ -19,42 +16,34 @@ jobs:
       with:
         submodules: recursive
 
-    - name: Clone vcpkg
-      run: git clone https://github.com/Microsoft/vcpkg.git
-
-    - name: Bootstrap vcpkg
-      run: |
-        cd vcpkg
-        .\bootstrap-vcpkg.bat
-
-    - name: Setup Python for Google Drive Download
-      uses: actions/setup-python@v3 # Correção: setup-python@v4 -> setup-python@v3
+    - name: Setup Python
+      uses: actions/setup-python@v3
       with:
         python-version: '3.x'
 
-    - name: Update pip # Importante para evitar erros com versões antigas do pip
+    - name: Update pip
       run: python -m pip install --upgrade pip
 
-    - name: Install gdown for Google Drive Download
+    - name: Install gdown
       run: pip install gdown
 
     - name: Download Server.zip from Google Drive
       run: |
-        gdown --fuzzy 1mbP66SZCS0jK7DKeQKb3PcvdgtmDdDNq -O Server.zip # Correção: Adicionado --fuzzy e -O Server.zip
+        gdown --fuzzy 1mbP66SZCS0jK7DKeQKb3PcvdgtmDdDNq -O Server.zip
 
-    - name: Check if Server.zip exists # Verifica se o download funcionou
+    - name: Check if Server.zip exists
       id: check_files
       uses: andstor/file-existence-action@v2
       with:
         files: "Server.zip"
 
-    - name: Fail if download failed # Interrompe o workflow se o download falhar
+    - name: Fail if download failed
       if: ${{ steps.check_files.outputs.files_exists == 'false' }}
       run: exit 1
 
     - name: Extract Server.zip
       run: |
-        Expand-Archive -Path Server.zip -DestinationPath .\server # Correção: DestinationPath .\server
+        Expand-Archive -Path Server.zip -DestinationPath .\server
 
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1.1
@@ -63,12 +52,11 @@ jobs:
       uses: lukka/run-vcpkg@v11
       with:
         vcpkgDirectory: '${{ github.workspace }}/vcpkg'
-        # Remova a linha abaixo:
-        # vcpkgGitCommitId: '4c1a773f4704a8a16e89def5e0ade9dd25bdd3c1'
 
     - name: Install Dependencies via vcpkg
       run: |
-        ${{ github.workspace }}/vcpkg/vcpkg install boost-iostreams:x64-windows boost-asio:x64-windows boost-system:x64-windows boost-filesystem:x64-windows boost-variant:x64-windows boost-uuid:x64-windows boost-thread:x64-windows luajit:x64-windows libmariadb:x64-windows pugixml:x64-windows cryptopp:x64-windows fmt:x64-windows
+        cd ${{ github.workspace }}
+        ${{ github.workspace }}/vcpkg/vcpkg install --triplet x64-windows
 
     - name: Configure CMake
       run: |
