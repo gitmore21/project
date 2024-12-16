@@ -1,0 +1,19 @@
+{
+  "name": "tfs-project",
+  "version": "1.4.0",
+  "dependencies": [
+    "boost-iostreams",
+    "boost-asio",
+    "boost-system",
+    "boost-filesystem",
+    "boost-variant",
+    "boost-uuid",
+    "boost-thread",
+    "luajit",
+    "libmariadb",
+    "pugixml",
+    "cryptopp",
+    "fmt"
+  ],
+  "builtin-baseline": "7f3557928967d4d47e10960e8423f86b2b37b2f1"
+}
