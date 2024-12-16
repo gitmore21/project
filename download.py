@@ -10,11 +10,11 @@ def download_from_google_drive(file_id, output_path):
   """
   try:
     url = f'https://drive.google.com/uc?id={file_id}'
-    gdown.download(url, output_path, quiet=False, fuzzy=True) # Use fuzzy=True for large files
+    gdown.download(url, output_path, quiet=False, fuzzy=True)
     print(f"File downloaded successfully to: {output_path}")
   except Exception as e:
     print(f"Error downloading file: {e}")
-    exit(1)  # Exit with an error code if download fails
+    exit(1)
 
 if __name__ == "__main__":
   file_id = os.getenv("1mbP66SZCS0jK7DKeQKb3PcvdgtmDdDNq")
