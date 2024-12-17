@@ -48,17 +48,23 @@ jobs:
 
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1.1
+      
+    - name: Setup vcpkg
+      uses: lukka/run-vcpkg@v11
+      with:
+        vcpkgDirectory: '${{ github.workspace }}/vcpkg'
 
-    - name: Configure and Build Crypto++ (Manual)
+    - name: Install Dependencies via vcpkg
       run: |
-        cd ${{ github.workspace }}/server/Server/cryptopp
-        cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release -DCRYPTOPP_BUILD_STATIC=ON
-        cmake --build build --config Release
+        cd ${{ github.workspace }}/vcpkg
+        ./vcpkg install boost-iostreams:x64-windows boost-asio:x64-windows boost-system:x64-windows boost-filesystem:x64-windows boost-variant:x64-windows boost-uuid:x64-windows boost-thread:x64-windows luajit:x64-windows libmariadb:x64-windows pugixml:x64-windows cryptopp:x64-windows
 
     - name: Configure CMake
       run: |
         cd ${{ github.workspace }}
         cmake -B build -S server/Server \
+        -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake \
+        -DVCPKG_TARGET_TRIPLET=x64-windows \
         -DCMAKE_BUILD_TYPE=Release \
         -DUSE_LUAJIT=ON
 
