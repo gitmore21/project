@@ -10,6 +10,7 @@ on:
 jobs:
   build:
     runs-on: windows-latest
+    timeout-minutes: 360
 
     steps:
     - uses: actions/checkout@v3
@@ -27,76 +28,44 @@ jobs:
     - name: Install gdown
       run: pip install gdown
 
-    - name: Download Server_Windows.zip from Google Drive
+    - name: Download Server.zip from Google Drive
       run: |
-        gdown --fuzzy 14Lkj7ihYDFIEd65BjxD_4hHc_kDgLHo0 -O Server_Windows.zip
+        gdown --fuzzy 1mbP66SZCS0jK7DKeQKb3PcvdgtmDdDNq -O Server.zip
 
-    - name: Check if Server_Windows.zip exists
+    - name: Check if Server.zip exists
       id: check_files
       uses: andstor/file-existence-action@v2
       with:
-        files: "Server_Windows.zip"
+        files: "Server.zip"
 
     - name: Fail if download failed
       if: ${{ steps.check_files.outputs.files_exists == 'false' }}
       run: exit 1
 
-    - name: Extract Server_Windows.zip
+    - name: Extract Server.zip
       run: |
-        Expand-Archive -Path Server_Windows.zip -DestinationPath .\server
+        Expand-Archive -Path Server.zip -DestinationPath .\server
 
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1.1
 
-    - name: Clone vcpkg
+    - name: Configure and Build Crypto++ (Manual)
       run: |
-        git clone https://github.com/microsoft/vcpkg.git ${{ github.workspace }}/vcpkg
-
-    - name: Bootstrap vcpkg
-      run: |
-        cd ${{ github.workspace }}/vcpkg
-        .\bootstrap-vcpkg.bat
-
-    - name: Install Dependencies via vcpkg (Except fmt)
-      run: |
-        cd ${{ github.workspace }}/vcpkg
-        ./vcpkg install boost-iostreams:x64-windows boost-asio:x64-windows boost-system:x64-windows boost-filesystem:x64-windows boost-variant:x64-windows boost-uuid:x64-windows boost-thread:x64-windows luajit:x64-windows libmariadb:x64-windows pugixml:x64-windows cryptopp:x64-windows boost-lockfree:x64-windows
-
-    - name: Download and Build fmt 9.1.0 Statically
-      shell: pwsh
-      run: |
-        # Baixar o fmt 9.1.0
-        Invoke-WebRequest -Uri "https://github.com/fmtlib/fmt/archive/refs/tags/9.1.0.zip" -OutFile "fmt-9.1.0.zip"
-        
-        # Descompactar
-        Expand-Archive -Path "fmt-9.1.0.zip" -DestinationPath "${{ github.workspace }}/server/Server"
-        
-        # Renomear a pasta para 'fmt' para evitar conflitos
-        Rename-Item -Path "${{ github.workspace }}/server/Server/fmt-9.1.0" -NewName "fmt"
-
-        # Criar diretório de build e configurar
-        New-Item -ItemType Directory -Path "${{ github.workspace }}/server/Server/fmt/build"
-        cd ${{ github.workspace }}/server/Server/fmt/build
-        cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/fmt-install
-        
-        # Compilar
-        cmake --build . --config Release
+        cd ${{ github.workspace }}/server/Server/cryptopp
+        cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release -DCRYPTOPP_BUILD_STATIC=ON
+        cmake --build build --config Release
 
     - name: Configure CMake
-      shell: pwsh
       run: |
         cd ${{ github.workspace }}
-        cmake -B build -S server/Server `
-        -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake `
-        -DVCPKG_TARGET_TRIPLET=x64-windows `
-        -DCMAKE_BUILD_TYPE=Release `
-        -DUSE_LUAJIT=ON `
-        -DCMAKE_VERBOSE_MAKEFILE=ON
+        cmake -B build -S server/Server \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DUSE_LUAJIT=ON
 
     - name: Build Project
       run: |
         cd ${{ github.workspace }}/build
-        cmake --build . --config Release --verbose
+        cmake --build . --config Release
 
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v3
