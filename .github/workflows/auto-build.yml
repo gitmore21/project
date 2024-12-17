@@ -49,6 +49,10 @@ jobs:
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1.1
 
+    - name: Remove vcpkg directory (force clean reinstall)
+      run: |
+        rm -rf ${{ github.workspace }}/vcpkg
+
     - name: Clone vcpkg
       run: |
         git clone https://github.com/microsoft/vcpkg.git ${{ github.workspace }}/vcpkg
@@ -65,6 +69,7 @@ jobs:
 
     - name: Configure CMake
       run: |
+        rm -rf ${{ github.workspace }}/build
         cd ${{ github.workspace }}
         cmake -B build -S server/Server \
         -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake \
