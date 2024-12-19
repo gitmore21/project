@@ -71,6 +71,9 @@ jobs:
 
     - name: Configure CMake
       run: |
+        if (!(Test-Path -Path ${{ github.workspace }}/build -PathType Container)) {
+          New-Item -ItemType Directory -Path ${{ github.workspace }}/build
+        }
         Remove-Item -Recurse -Force ${{ github.workspace }}/build # Clean build directory (PowerShell equivalent)
         cd ${{ github.workspace }}
         cmake -B build -S server/Server \
