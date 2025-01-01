@@ -13,8 +13,9 @@ jobs:
       - name: Checkout OpenKore code
         uses: actions/checkout@v3
         with:
-          repository: OpenKore/openkore # Especifica o repositório correto
-          ref: master # Ou a branch/tag que você quiser (ex: 'master', '2.1.0', etc.)
+          repository: OpenKore/openkore
+          ref: master
+          submodules: true  # Adicionado para inicializar submódulos
 
       - name: Install Perl
         uses: shogo82148/actions-setup-perl@v1
@@ -37,4 +38,3 @@ jobs:
           name: openkore-windows
           path: |
             *.exe
-            # Outros arquivos que você queira disponibilizar como artefatos
