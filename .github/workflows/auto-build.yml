@@ -3,15 +3,18 @@ name: Build OpenKore (Windows)
 on:
   push:
     branches:
-      - main # Ou a branch que você deseja usar
+      - main
 
 jobs:
   build:
-    runs-on: windows-latest # Usa uma máquina virtual Windows mais recente
+    runs-on: windows-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout OpenKore code
         uses: actions/checkout@v3
+        with:
+          repository: OpenKore/openkore # Especifica o repositório correto
+          ref: master # Ou a branch/tag que você quiser (ex: 'master', '2.1.0', etc.)
 
       - name: Install Perl
         uses: shogo82148/actions-setup-perl@v1
@@ -22,18 +25,16 @@ jobs:
         run: |
           cpan install Module::Build
           cpan install Win32::API
-          # Instale outras dependências do Openkore, se houver
 
       - name: Build OpenKore
         run: |
-          perl Makefile.PL
-          .\build.bat
-          # Ou os comandos necessários para compilar o OpenKore
+          perl Build.PL
+          .\Build
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
           name: openkore-windows
           path: |
-            openkore.exe
+            *.exe
             # Outros arquivos que você queira disponibilizar como artefatos
